@@ -1,9 +1,108 @@
-import example.pepita
+import Destinos.*
+import Mensajeros.*
+import Paquetes.*
+import empresaMensajeria.*
+import vehiculos.*
 
-describe "group of tests for pepita" {
+describe "Tests de Mensajería Recargada" {
 
-  test "pepita has initial energy" {
-    assert.equals(100, pepita.energy())
-  }
+    method initialize() {
+        empresa.despedirTodosLosMensajeros()
+        empresa.paquetesPendientes().clear()
+        empresa.resetearFacturacion()
 
+        neo.consumirCredito(1000) 
+    }
+
+    test "Averiguar si un paquete puede ser entregado por la empresa" {
+        paquete.cambiardestino(matrix)
+        paquete.registrarPago()
+        
+        empresa.contratarUnMensajero(roberto) 
+        assert.notThat(empresa.puedeEntregarsePorLaEmpresa(paquete))
+        
+        empresa.contratarUnMensajero(chuckNorris)
+        assert.that(empresa.puedeEntregarsePorLaEmpresa(paquete))
+    }
+
+    test "Obtener todos los mensajeros que pueden llevar un paquete" {
+        empresa.contratarUnMensajero(roberto)
+        empresa.contratarUnMensajero(chuckNorris)
+        empresa.contratarUnMensajero(neo)        
+        paquete.cambiardestino(matrix)
+        paquete.registrarPago()
+
+        const aptos = empresa.mensajerosQuePuedenLlevar(paquete)
+        
+        assert.equals(1, aptos.size())
+        assert.that(aptos.contains(chuckNorris))
+    }
+
+    test "Saber si una mensajeria tiene sobrepeso" {
+        camion.acoplados(2)
+        roberto.cambiarDeVehiculo(camion)
+        empresa.contratarUnMensajero(roberto)
+        empresa.contratarUnMensajero(chuckNorris)
+        assert.that(empresa.tieneSobrepeso())
+    }
+
+    test "Enviar un paquete suma a la facturación o va a pendientes" {
+        empresa.contratarUnMensajero(roberto) 
+        
+        paquete.cambiardestino(matrix)
+        paquete.registrarPago() 
+        empresa.enviar(paquetito) 
+        empresa.enviar(paquete) 
+        
+        assert.equals(0, empresa.facturacion())
+        assert.equals(1, empresa.paquetesPendientes().size())
+        assert.that(empresa.paquetesPendientes().contains(paquete))
+    }
+
+    test "Enviar todos los paquetes de un conjunto" {
+        empresa.contratarUnMensajero(chuckNorris) 
+        
+        paquete.cambiardestino(brooklyn)
+        paquete.registrarPago()
+        
+        paqueton.destinos().clear()
+        paqueton.destinos().add(matrix)
+        paqueton.pagoParcial(100)
+        
+        const misPaquetes = [paquete, paquetito, paqueton]
+        
+        empresa.enviarTodos(misPaquetes)
+
+        assert.equals(150, empresa.facturacion())
+        assert.that(empresa.paquetesPendientes().isEmpty())
+    }
+
+    test "Enviar el paquete pendiente más caro" {
+        paquete.cambiardestino(matrix)
+        paquete.registrarPago()
+        
+        paqueton.destinos().clear()
+        paqueton.destinos().add(matrix)
+        paqueton.pagoParcial(100) // Cuesta 100
+        
+        empresa.paquetesPendientes().add(paquete)
+        empresa.paquetesPendientes().add(paqueton)
+        
+        empresa.contratarUnMensajero(chuckNorris)
+        
+        empresa.enviarPendienteMasCaro()
+        
+        assert.equals(100, empresa.facturacion())
+        assert.equals(1, empresa.paquetesPendientes().size())
+        assert.that(empresa.paquetesPendientes().contains(paquete))
+    }
 }
+
+test "Garantizar que todo siga funcionando con John Wick y la Caja Misteriosa" {
+        empresa.contratarUnMensajero(johnWick)
+        cajaMisteriosa.registrarPago() 
+        assert.that(empresa.puedeEntregarsePorLaEmpresa(cajaMisteriosa))
+        empresa.enviar(cajaMisteriosa)
+        assert.equals(500, empresa.facturacion())
+        assert.that(empresa.paquetesPendientes().isEmpty())
+    }
